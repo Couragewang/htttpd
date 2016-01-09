@@ -1,5 +1,5 @@
 httpd:httpd.c
-	gcc -o $@ $^
+	gcc -w -o $@ $^ -lpthread #-D_DEBUG_
 
 .PHONY:clean
 clean:
