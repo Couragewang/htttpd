@@ -8,6 +8,8 @@
 #include <netinet/in.h>
 #include <pthread.h>
 #include <string.h>
+#include <stdlib.h>
+#include <ctype.h>
 //#include <sys/sendfile.h>
 #include <sys/types.h>//unix
 #include <sys/socket.h>//unix

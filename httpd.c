@@ -2,6 +2,11 @@
 
 void clear_header(int client)
 {
+	int ncharnums = 0;
+	char buf[COMM_SIZE];
+	do{
+		ncharnums = get_line(client, buf, sizeof(buf));
+	}while(ncharnums > 0 && strcasecmp(buf, "\n") != 0);//数据有效，继续清除
 }
 
 void echo_file(int client, char *path_name, int file_len)
@@ -16,8 +21,88 @@ void echo_file(int client, char *path_name, int file_len)
 	}
 }
 
-void exe_cgi()
+void exe_cgi(int client, const char *path, const char *method, const char *query_string)
 {
+	char buf[COMM_SIZE/2];
+	int numchars = -1;
+	int content_length = -1;
+
+	int cgi_input[2] = {0,0};
+	int cgi_output[2] = {0, 0};
+
+	pid_t pid;
+
+	if( strcasecmp("GET", method) == 0 ){//GET方式按照url传递数据或参数
+		clear_header(client);
+	}else{//POST
+		do{
+			memset(buf, '\0', sizeof(buf));
+			numchars = get_line(client, buf, sizeof(buf));
+			if(strcasecmp(buf, "Content-Length:") == 0){
+				buf[15] = '\0';
+				content_length = atoi(&buf[16]);
+			}
+		}while(numchars > 0 && strcasecmp("\n", buf));//读取行成功
+		if( content_length == -1 ){//POST 方式传输数据通过消息体传输数据
+			return_back_errno();
+			return;
+		}
+	}
+	sprintf(buf, "HTTP/1.0 200 OK\r\n");//该cgi请求被受理，返回状态行信息
+	send(client, buf, strlen(buf), 0);
+
+	if(pipe(cgi_input) < 0){
+	    return_back_errno();
+		return;
+	}
+	if(pipe(cgi_output) < 0){
+		return_back_errno();
+		return;
+	}
+	if( (pid = fork()) < 0){
+		return_back_errno();
+		return;
+	}else if(pid == 0){//child
+		char meth_env[COMM_SIZE/8];
+		char query_env[COMM_SIZE/8];
+		char content_len_env[COMM_SIZE/8];
+		memset(meth_env, '0', sizeof(meth_env));
+		memset(query_env, '0', sizeof(query_env));
+		memset(content_len_env, '0', sizeof(content_len_env));
+		close(cgi_input[1]);//cgi脚本从cgi_input读取数据，使用0描述符
+		close(cgi_output[0]);//cgi脚本从cgi_output输出数据，使用1描述符
+		dup2(cgi_output[1], 1);//cgi脚本的标准输出变成了cgi_output管道
+		dup2(cgi_input[0], 0);//标准输入变成了cgi_input管道
+		
+		sprintf(meth_env, "REQUEST_METHOD=%s", method);//web和cgi交互数据的一种方式，通过环境变量来传递
+		putenv(meth_env);
+		if(strcasecmp("GET", method) == 0){//GET方法能进入CGI，说明client肯定有参数传入
+			sprintf(query_env, "QUERY_STRING=%s", query_string);
+			putenv(query_env);//将参数导出为环境变量，供CGI脚本使用
+		}else{//POST
+			sprintf(content_len_env, "CONTENT_LENGTH=%d", content_length);
+			putenv(content_len_env);//该字段描述POST倒入cgi数据的长度，也要通过环境变量告知CGI
+		}
+		execl(path, path, NULL);
+		exit(1);
+	}else{//father
+		int i = 0;
+		char c;
+		close(cgi_input[0]);
+		close(cgi_output[1]);
+		if(strcasecmp("POST", method) == 0){
+			for(; i < content_length; i++){
+				recv(client, &c, 1, 0);
+				write(cgi_input[1], &c, 1);
+			}
+		}
+		while(read(cgi_output[0], &c, 1) > 0){
+			send(client, &c, 1, 0);
+		}
+		close(cgi_input[1]);
+		close(cgi_output[0]);
+		waitpid(pid, NULL, 0);
+	}
 }
 
 void return_back_errno()
@@ -55,7 +140,7 @@ int get_line(int client, char buf[], int buflen)
 
 void* accept_request(void *arg)
 {
-	int fd = (int)arg;
+	int fd = *((int*)arg);
 	char buf[COMM_SIZE];
 	char method[COMM_SIZE/5];
 	char url[COMM_SIZE/2];
@@ -137,7 +222,7 @@ void* accept_request(void *arg)
 		if(!cgi){//不是cgi,仅仅是一个普通的html请求，回发指定文件即可。
 			echo_file(fd, path, st.st_size);
 		}else{//执行CGI
-			exe_cgi();
+			exe_cgi(fd, path, method, query_string);
 		}
 	}
 	close(fd);//http协议是一个无状态协议，所以执行完成之后，需要关闭链接
@@ -169,7 +254,7 @@ int startup(u_short *port)
 	local.sin_addr.s_addr   = htonl(INADDR_ANY);
 
 	int flag = 1;
-	setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, flag, sizeof(flag));
+	setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, &flag, sizeof(flag));
 
 	if( bind(sock, (struct sockaddr *)&local, sizeof(local)) < 0 ){
 		perror("bind");
@@ -198,7 +283,7 @@ int main()
 			break;
 		}
 		pthread_t id;
-		if( pthread_create(&id, NULL, accept_request, (void*)new_fd) != 0){
+		if( pthread_create(&id, NULL, accept_request, (void*)&new_fd) != 0 ){
 			perror("pthread_create");
 		}
 	}
