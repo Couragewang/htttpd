@@ -4,5 +4,5 @@ test_cgi:test_cgi.c
 clean:
 	rm -f test_cgi
 .PHONY:output
-output:test_cgi
-	mv test_cgi ..
+output:
+	cp test_cgi ../output/cgi_bin/

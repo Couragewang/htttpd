@@ -32,7 +32,7 @@ int main()
 			}
 			buf[sum]='\0';
 		}
-
 		printf("%s\n", buf);
+		printf("haha\n");
 	}
 }

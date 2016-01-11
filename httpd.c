@@ -23,6 +23,7 @@ void echo_file(int client, char *path_name, int file_len)
 
 void exe_cgi(int client, const char *path, const char *method, const char *query_string)
 {
+	printf("begin cgi\n");
 	char buf[COMM_SIZE/2];
 	int numchars = -1;
 	int content_length = -1;
