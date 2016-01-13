@@ -23,7 +23,6 @@ void echo_file(int client, char *path_name, int file_len)
 
 void exe_cgi(int client, const char *path, const char *method, const char *query_string)
 {
-	printf("begin cgi\n");
 	char buf[COMM_SIZE/2];
 	int numchars = -1;
 	int content_length = -1;
@@ -39,7 +38,7 @@ void exe_cgi(int client, const char *path, const char *method, const char *query
 		do{
 			memset(buf, '\0', sizeof(buf));
 			numchars = get_line(client, buf, sizeof(buf));
-			if(strcasecmp(buf, "Content-Length:") == 0){
+			if(strncasecmp(buf, "Content-Length:", 15) == 0){
 				buf[15] = '\0';
 				content_length = atoi(&buf[16]);
 			}
@@ -223,9 +222,11 @@ void* accept_request(void *arg)
 		if(!cgi){//不是cgi,仅仅是一个普通的html请求，回发指定文件即可。
 			echo_file(fd, path, st.st_size);
 		}else{//执行CGI
+			//printf("%d, %s, %s, %s\n", fd, path, method, query_string);
 			exe_cgi(fd, path, method, query_string);
 		}
 	}
+
 	close(fd);//http协议是一个无状态协议，所以执行完成之后，需要关闭链接
 //	//skip backspace
 //	while( isspace(buf[i]) ){

@@ -5,6 +5,31 @@
 #include <stdlib.h>
 #include <string.h>
 
+void add(char *buf, int len)
+{
+	if( NULL == buf && len < 0 ){
+		printf("<p>unknow</p>");
+		return;
+	}
+	int i = 0;
+	int sum = 0;
+	char *tmp[64];
+	while(*buf != '\0'){
+		if(*buf == '='){
+			tmp[i++] = buf+1;
+		}
+		if(*buf == '&'){
+			*buf = '\0';
+		}
+		buf++;
+	}
+	int j = 0;
+	for(; j < i; j++){
+		sum += atoi(tmp[j]);
+	}
+	printf("<p>res : %d</p>\n", sum);
+}
+
 int main()
 {
 	printf("\n");//消息头和消息体中间有空行，需要注意
@@ -40,5 +65,9 @@ int main()
 		}
 		buf[sum]='\0';
 	}
-	printf("<p>:)</p>\n");
+	char work_space[1024];
+	strcpy(work_space, buf);
+	add(work_space, strlen(work_space));
 }
+
+

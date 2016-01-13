@@ -8,7 +8,7 @@ all:httpd demo_client cgi
 httpd:httpd.c
 	gcc $(OPT) -o $@ $^ -lpthread #-D_DEBUG_
 demo_client:demo_client.c
-	gcc $(OPT) -o $@ $^ 
+	gcc $(OPT) -o $@ $^ -lpthread
 
 .PHONY:cgi
 cgi:
@@ -21,8 +21,8 @@ cgi:
 #发布
 .PHONY:output
 output:
-	mkdir -p output/cgi_bin
-	cp -rf htdocs output/
+	mkdir -p output/htdocs/cgi_bin
+	cp -rf htdocs/* output/htdocs
 	cp demo_client output/
 	cp httpd output/
 	for name in `echo $(BIN_DIR)`;\
