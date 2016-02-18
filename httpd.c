@@ -162,7 +162,7 @@ void* accept_request(void *arg)
 	}
 #else
 	if(get_line(fd, buf, sizeof(buf)-1) < 0){
-		return_back_errno();
+		return_back_errno(); //读取请求行失败
 		return NULL;
 	}
 	//get method
