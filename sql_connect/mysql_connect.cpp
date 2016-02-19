@@ -7,6 +7,7 @@ static void print_log(std::string msg)
 
 db_connect::db_connect(const std::string &_username, const std::string &_passwd, const std::string &_db)
 {
+	connect_mysql = mysql_init(NULL);
 	this->db_ip = DEFAULT_IP;
 	this->port  = DEFAULT_PORT;
 	this->username = _username;
@@ -26,7 +27,7 @@ bool db_connect::mysql_connect()
 	//发起连接
 	//if(mysql_real_connect(&connect_mysql, db_ip.c_str(), username.c_str(), passwd.c_str(), db.c_str(), port, NULL, 0)){
 	//if(1){
-	if(mysql_real_connect(&connect_mysql, "192.168.0.146", "dandan", "123456", "remote_db", 3306, NULL, 0)){
+	if(mysql_real_connect(connect_mysql, db_ip.c_str(), username.c_str(), passwd.c_str(), db.c_str(), port, NULL, 0)){
 		print_log("connect db success");
 		return true;
 	}else{
@@ -39,7 +40,7 @@ bool db_connect::mysql_connect()
 bool db_connect::mysql_operator(std::string &sql)
 {
 	//发起操作
-	int ret = mysql_query(&connect_mysql, sql.c_str());
+	int ret = mysql_query(connect_mysql, sql.c_str());
 	if( ret == 0 ){//success
 		print_log("mysql query success");
 		return true;
@@ -55,7 +56,7 @@ bool db_connect::mysql_show_table()
 {
 	char table[64][64];
 	//该函数内部会进行malloc，所以需要显示的释放资源
-	res = mysql_store_result(&connect_mysql);
+	res = mysql_store_result(connect_mysql);
 	MYSQL_FIELD *fd;
 	MYSQL_ROW sql_row;
 	if(res){
@@ -89,7 +90,7 @@ bool db_connect::mysql_down()
 {
 	if( NULL != res ){
 		mysql_free_result(res);
-		mysql_close(&connect_mysql);
+		mysql_close(connect_mysql);
 	}
 	return true;
 }
@@ -100,10 +101,11 @@ bool db_connect::mysql_down()
 int main()
 {
 	db_connect db_test(USERNAME, PASSWD, DB);
+//	std::cout<<mysql_get_client_info()<<std::endl;
 	db_test.mysql_connect();
-//	std::string sql = "select * from student";
-//	db_test.mysql_operator(sql);
-//	db_test.mysql_show_table();
+	std::string sql = "select * from students";
+	db_test.mysql_operator(sql);
+	db_test.mysql_show_table();
 	return 0;
 }
 
