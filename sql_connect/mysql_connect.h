@@ -2,9 +2,7 @@
 #define _MYSQL_CONNECT_CPP_
 
 #include <iostream>
-#include <mysql_connection.h>
-#include <mysql_driver.h>
-#include <statement.h>
+#include <mysql.h>
 #include <cstring>
 
 //#define DEFAULT_IP "127.0.0.1"//默认本地
@@ -14,17 +12,16 @@
 #define PASSWD   "123456" //用户密码
 #define DB       "remote_db" //访问的远端数据库
 
-using namespace sql;
-using namespace std;
 
 class db_connect{
 	private:
+		MYSQL connect_mysql;
 		std::string db_ip;
 		std::string username;
 		std::string passwd;
 		std::string db;
 		unsigned int port;
-		
+		MYSQL_RES *res;
 	public:
 		db_connect(const std::string &_username,\
 				   const std::string &_passwd,\
