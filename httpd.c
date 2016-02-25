@@ -1,5 +1,117 @@
 #include "httpd.h"
 
+///**********************************************************************/
+///* Inform the client that a request it has made has a problem.
+// * Parameters: client socket */
+///**********************************************************************/
+//void bad_request(int client)
+//{
+//    char buf[1024];
+//   
+//    sprintf(buf, "HTTP/1.0 400 BAD REQUEST\r\n");
+//    send(client, buf, sizeof(buf), 0);
+//    sprintf(buf, "Content-type: text/html\r\n");
+//    send(client, buf, sizeof(buf), 0);
+//    sprintf(buf, "\r\n");
+//    send(client, buf, sizeof(buf), 0);
+//    sprintf(buf, "<P>Your browser sent a bad request, ");
+//    send(client, buf, sizeof(buf), 0);
+//    sprintf(buf, "such as a POST without a Content-Length.\r\n");
+//    send(client, buf, sizeof(buf), 0);
+//}
+//
+///**********************************************************************/
+///* Inform the client that a CGI script could not be executed.
+// * Parameter: the client socket descriptor. */
+///**********************************************************************/
+//void cannot_execute(int client)
+//{
+//    char buf[1024];
+//   
+//    sprintf(buf, "HTTP/1.0 500 Internal Server Error\r\n");
+//    send(client, buf, strlen(buf), 0);
+//    sprintf(buf, "Content-type: text/html\r\n");
+//    send(client, buf, strlen(buf), 0);
+//    sprintf(buf, "\r\n");
+//    send(client, buf, strlen(buf), 0);
+//    sprintf(buf, "<P>Error prohibited CGI execution.\r\n");
+//    send(client, buf, strlen(buf), 0);
+//}
+//
+///**********************************************************************/
+///* Return the informational HTTP headers about a file. */
+///* Parameters: the socket to print the headers on
+// *             the name of the file */
+///**********************************************************************/
+//void headers(int client, const char *filename)
+//{
+//    char buf[1024];
+//    (void)filename;  /* could use filename to determine file type */
+//
+//    strcpy(buf, "HTTP/1.0 200 OK\r\n");
+//    send(client, buf, strlen(buf), 0);
+//    strcpy(buf, SERVER_STRING);
+//    send(client, buf, strlen(buf), 0);
+//    sprintf(buf, "Content-Type: text/html\r\n");
+//    send(client, buf, strlen(buf), 0);
+//    strcpy(buf, "\r\n");
+//    send(client, buf, strlen(buf), 0);
+//}
+//
+///**********************************************************************/
+///* Give a client a 404 not found status message. */
+///**********************************************************************/
+//void not_found(int client)
+//{
+//    char buf[1024];
+//
+//    sprintf(buf, "HTTP/1.0 404 NOT FOUND\r\n");
+//    send(client, buf, strlen(buf), 0);
+//    sprintf(buf, SERVER_STRING);
+//    send(client, buf, strlen(buf), 0);
+//    sprintf(buf, "Content-Type: text/html\r\n");
+//    send(client, buf, strlen(buf), 0);
+//    sprintf(buf, "\r\n");
+//    send(client, buf, strlen(buf), 0);
+//    sprintf(buf, "<HTML><TITLE>Not Found</TITLE>\r\n");
+//    send(client, buf, strlen(buf), 0);
+//    sprintf(buf, "<BODY><P>The server could not fulfill\r\n");
+//    send(client, buf, strlen(buf), 0);
+//    sprintf(buf, "your request because the resource specified\r\n");
+//    send(client, buf, strlen(buf), 0);
+//    sprintf(buf, "is unavailable or nonexistent.\r\n");
+//    send(client, buf, strlen(buf), 0);
+//    sprintf(buf, "</BODY></HTML>\r\n");
+//    send(client, buf, strlen(buf), 0);
+//}
+//
+///**********************************************************************/
+///* Give a client a 404 not found status message. */
+///**********************************************************************/
+//void not_found(int client)
+//{
+//    char buf[1024];
+//
+//    sprintf(buf, "HTTP/1.0 404 NOT FOUND\r\n");
+//    send(client, buf, strlen(buf), 0);
+//    sprintf(buf, SERVER_STRING);
+//    send(client, buf, strlen(buf), 0);
+//    sprintf(buf, "Content-Type: text/html\r\n");
+//    send(client, buf, strlen(buf), 0);
+//    sprintf(buf, "\r\n");
+//    send(client, buf, strlen(buf), 0);
+//    sprintf(buf, "<HTML><TITLE>Not Found</TITLE>\r\n");
+//    send(client, buf, strlen(buf), 0);
+//    sprintf(buf, "<BODY><P>The server could not fulfill\r\n");
+//    send(client, buf, strlen(buf), 0);
+//    sprintf(buf, "your request because the resource specified\r\n");
+//    send(client, buf, strlen(buf), 0);
+//    sprintf(buf, "is unavailable or nonexistent.\r\n");
+//    send(client, buf, strlen(buf), 0);
+//    sprintf(buf, "</BODY></HTML>\r\n");
+//    send(client, buf, strlen(buf), 0);
+//}
+
 void clear_header(int client)
 {
 	int ncharnums = 0;
@@ -14,6 +126,7 @@ void echo_file(int client, char *path_name, int file_len)
 	clear_header(client);
 	int fd = open(path_name, O_RDONLY, 0);
 	if( fd < 0 ){
+		//not_found(client);
 		return_back_errno();
 	}else{
 		sendfile(fd, client, 0, &file_len, NULL, 0);//unix,os x
@@ -44,6 +157,7 @@ void exe_cgi(int client, const char *path, const char *method, const char *query
 			}
 		}while(numchars > 0 && strcasecmp("\n", buf));//读取行成功
 		if( content_length == -1 ){//POST 方式传输数据通过消息体传输数据
+			//bad_request(client);
 			return_back_errno();
 			return;
 		}
@@ -52,14 +166,17 @@ void exe_cgi(int client, const char *path, const char *method, const char *query
 	send(client, buf, strlen(buf), 0);
 
 	if(pipe(cgi_input) < 0){
+		//cannot_execute(client);
 	    return_back_errno();
 		return;
 	}
 	if(pipe(cgi_output) < 0){
+		//cannot_execute(client);
 		return_back_errno();
 		return;
 	}
 	if( (pid = fork()) < 0){
+		//cannot_execute(client);
 		return_back_errno();
 		return;
 	}else if(pid == 0){//child
@@ -173,6 +290,7 @@ void* accept_request(void *arg)
 		j++, i++;
 	}
 	if(strcasecmp("POST", method) != 0 && strcasecmp("GET", method) != 0){
+		//unimplemented(client);
 		return_back_errno();
 		return NULL;
 	}
@@ -210,6 +328,7 @@ void* accept_request(void *arg)
 	struct stat st;
 	if( stat(path, &st) < 0 ){//文件不存在
 		clear_header(fd);
+		//not_found(client);
 		return_back_errno();
 	}else{//文件存在，并且成功获取了对应的st信息
 		if(S_ISDIR(st.st_mode)){//指定文件是目录
