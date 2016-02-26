@@ -6,7 +6,7 @@
 #include <cstring>
 
 //#define DEFAULT_IP "127.0.0.1"//默认本地
-#define DEFAULT_IP "192.168.1.101"//设置的远端mysql存储服务器
+#define DEFAULT_IP "192.168.0.151"//设置的远端mysql存储服务器
 #define DEFAULT_PORT 3306 //mysql默认绑定端口
 #define USERNAME "dandan" //新建用户
 #define PASSWD   "123456" //用户密码

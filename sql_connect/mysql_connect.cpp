@@ -45,6 +45,8 @@ bool db_connect::mysql_operator(std::string &sql)
 		print_log("mysql query success");
 		return true;
 	}else{
+		printf("%s\n", strerror(ret));
+		printf("%s\n", sql.c_str());
 		print_log("mysql query failed");
 		return false;
 	}
@@ -104,6 +106,10 @@ int main()
 //	std::cout<<mysql_get_client_info()<<std::endl;
 	db_test.mysql_connect();
 	std::string sql = "select * from students";
+	//std::string insert_sql = "insert into bit_student_tbl ( student_name, student_age, student_school, register_time) values ('AAA', 20, 'xxy', NOW())";
+	std::string insert_sql = "INSERT INTO students(name, sex, age, school)VALUES ('haha', 'm', 19, 'qinghua')";
+//	std::cout<<insert_sql<<std::endl;
+	db_test.mysql_operator(insert_sql);
 	db_test.mysql_operator(sql);
 	db_test.mysql_show_table();
 	return 0;
